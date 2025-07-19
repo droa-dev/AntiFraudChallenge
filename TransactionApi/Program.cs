@@ -1,4 +1,25 @@
+using Confluent.Kafka;
+using Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
+using TransactionApi.Infrastructure.Data;
+using TransactionApi.Infrastructure.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<ApiContext>(opt =>
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+);
+
+//Kafka Producer
+builder.Services.AddSingleton(sp =>
+{
+    var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
+    return new ProducerBuilder<Null, string>(config).Build();
+});
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddTransient(typeof(IRepository<>), typeof(BaseRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
